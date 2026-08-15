@@ -18,6 +18,9 @@ jobs:
           - os: ubuntu-22.04
             arch: x86_64
     runs-on: ${{ matrix.os }}
+    # The signing key lives in the "release" environment's secrets, so the
+    # private key is only reachable from this publishing job.
+    environment: release
     steps:
       - uses: actions/checkout@v4
 
