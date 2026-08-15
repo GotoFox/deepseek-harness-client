@@ -8,6 +8,11 @@ on:
 permissions:
   contents: write
 
+# Re-pushing the same tag supersedes any in-flight run for it.
+concurrency:
+  group: client-release-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     strategy:

@@ -9,6 +9,13 @@ on:
         description: "dsh version to package (e.g. 0.1.0-rc.6)"
         required: true
 
+permissions:
+  contents: write
+
+concurrency:
+  group: kernel-release-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   kernel:
     runs-on: ubuntu-latest
