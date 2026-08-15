@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DSH Client</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <div class="logo">d</div>
+      <h1>DSH Client</h1>
+      <p id="status" class="status">正在启动 dsh 内核…</p>
+      <p id="detail" class="detail"></p>
+      <div id="actions" class="actions hidden">
+        <button id="retry" class="btn primary">重试</button>
+        <button id="check-update" class="btn">检查更新</button>
+      </div>
+      <p id="version" class="version"></p>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

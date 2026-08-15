@@ -1,0 +1,83 @@
+name: client-release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            arch: aarch64
+          - os: windows-latest
+            arch: x86_64
+          - os: ubuntu-22.04
+            arch: x86_64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install client toolchain
+        working-directory: client
+        run: npm ci
+
+      - name: Prepare runtime resources (node + dsh kernel)
+        working-directory: client
+        run: node scripts/prepare.mjs --bundle
+
+      - name: Build and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Sign the updater artifacts; the private key must exist as a repo secret.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        with:
+          projectPath: client
+          tagName: ${{ github.ref_name }}
+          releaseName: "DSH Client ${{ github.ref_name }}"
+          releaseBody: "DSH Client ${{ github.ref_name }} — see assets to download."
+          releaseDraft: false
+          prerelease: false
+
+  # Aggregate the per-platform bundles into the update manifest the client
+  # polls (https://github.com/GotoFox/deepseek-harness-client/releases/latest/download/latest.json).
+  update-manifest:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate update manifest
+        run: node client/scripts/make-update-json.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: GotoFox/deepseek-harness-client
+          TAG: ${{ github.ref_name }}
+
+      - name: Upload manifest to release
+        run: gh release upload "${{ github.ref_name }}" latest.json --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

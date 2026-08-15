@@ -1,0 +1,6 @@
+# dsh client local build artifacts
+node_modules/
+resources/
+src-tauri/target/
+src-tauri/gen/
+*.log

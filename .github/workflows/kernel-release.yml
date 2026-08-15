@@ -1,0 +1,45 @@
+name: kernel-release
+
+on:
+  push:
+    tags: ["kernel-*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "dsh version to package (e.g. 0.1.0-rc.6)"
+        required: true
+
+jobs:
+  kernel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF#refs/tags/kernel-}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build self-contained kernel tarball
+        run: |
+          mkdir -p /tmp/kernel && cd /tmp/kernel
+          npm init -y > /dev/null
+          npm install --omit=dev --no-audit --no-fund "@deepseek-ai/dsh@${{ steps.ver.outputs.version }}"
+          tar -czf "kernel-${{ steps.ver.outputs.version }}.tar.gz" node_modules
+
+      - name: Publish release
+        run: |
+          gh release create "kernel-${{ steps.ver.outputs.version }}" \
+            "kernel-${{ steps.ver.outputs.version }}.tar.gz" \
+            --title "dsh kernel ${{ steps.ver.outputs.version }}" \
+            --notes "Self-contained dsh kernel for DSH Client online updates."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

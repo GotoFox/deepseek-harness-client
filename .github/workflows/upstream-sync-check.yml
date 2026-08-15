@@ -1,0 +1,70 @@
+name: upstream-sync-check
+
+on:
+  schedule:
+    # Daily 09:00 Beijing time.
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compare with upstream
+        id: compare
+        run: |
+          git remote add upstream https://github.com/deepseek-ai/deepseek-harness.git
+          git fetch upstream master --quiet
+          BEHIND=$(git rev-list --count HEAD..upstream/master)
+          echo "behind=$BEHIND" >> "$GITHUB_OUTPUT"
+          echo "dev is $BEHIND commits behind upstream/master"
+
+      - name: Open or update a sync issue
+        if: steps.compare.outputs.behind != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const behind = Number("${{ steps.compare.outputs.behind }}");
+            const title = `上游有 ${behind} 个新提交待同步`;
+            const body = [
+              "上游 [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness) 已有新提交。",
+              "",
+              "同步方式：",
+              "```sh",
+              "git fetch upstream",
+              "git merge upstream/master",
+              "git push origin dev",
+              "```",
+              "",
+              "注意：客户端内核来自 npm 包 `@deepseek-ai/dsh`，上游发布新版本后，",
+              "需推送 `kernel-<version>` tag（或手动触发 kernel-release workflow）发布新内核包。",
+            ].join("\n");
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "sync",
+              per_page: 5,
+            });
+            const open = issues.find((i) => i.title.startsWith("上游有"));
+            if (open) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.number,
+                title,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["sync"],
+              });
+            }

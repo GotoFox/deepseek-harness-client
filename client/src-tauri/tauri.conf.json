@@ -1,0 +1,56 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "DSH Client",
+  "version": "0.1.0",
+  "identifier": "com.gotofox.dsh-client",
+  "build": {
+    "beforeDevCommand": "node scripts/dev.mjs --serve",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "node scripts/prepare.mjs --bundle",
+    "frontendDist": "../src"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "DSH Client",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 960,
+        "minHeight": 640,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../resources/node": "node",
+      "../resources/kernel.tar.gz": "kernel.tar.gz"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYwQjEwMDJGOEU1OTI3NUUKUldSZUoxbU9Md0N4OExMQnFwVWFIeXVnbmNhS281d0FNSXpod2F4RDlBUjgrZWlNdG5abXczWGEK",
+      "endpoints": [
+        "https://github.com/GotoFox/deepseek-harness-client/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

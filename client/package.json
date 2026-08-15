@@ -1,0 +1,16 @@
+{
+  "name": "dsh-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Desktop client shell for DeepSeek Harness (dsh), built with Tauri 2",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "prepare": "node scripts/prepare.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}
